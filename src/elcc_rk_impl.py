@@ -902,25 +902,23 @@ def IR_analysis(processed_IR_file):
 
 def correct_offshore_wind_coordinates(IR_file):
 # Use the actual coordiantes to relect potential additions from IR queue of offfshore wind farm
-"""
 
-"""
-offshore = dict()
-offshore['0695'] = [41.092, 71.311] # South Fork offshore wind farm - 2: 41.092°N 71.311161°W
-offshore['0612'] = [41.092, 71.311] # South Fork offshore wind farm: 41.092°N 71.311161°W
-offshore['0738'] = [] # Sunrise Wind farm
-offshore['0737'] = [] # Vineyard wind farm
-offshore['0959'] = [] 
-offshore['0958'] = []
-offshore['0790'] = []
-offshore['0789'] = [] 
-offshore['0758'] = [] 
-offshore['0363'] = [] 
-offshore['0792'] = []
-offshore['0680'] = []
-offshore['1011'] = []
-offshore['1010'] = []
-offshore['0679'] = []
+    offshore = dict()
+    offshore['0695'] = [41.092, 71.311] # South Fork offshore wind farm - 2: 41.092°N 71.311161°W
+    offshore['0612'] = [41.092, 71.311] # South Fork offshore wind farm: 41.092°N 71.311161°W
+    offshore['0738'] = [] # Sunrise Wind farm
+    offshore['0737'] = [] # Vineyard wind farm
+    offshore['0959'] = [] 
+    offshore['0958'] = []
+    offshore['0790'] = []
+    offshore['0789'] = [] 
+    offshore['0758'] = [] 
+    offshore['0363'] = [] 
+    offshore['0792'] = []
+    offshore['0680'] = []
+    offshore['1011'] = []
+    offshore['1010'] = []
+    offshore['0679'] = []
 
 
     pass
