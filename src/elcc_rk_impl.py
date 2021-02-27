@@ -900,7 +900,7 @@ def IR_analysis(processed_IR_file):
 
     return IR_plants
 
-def correct_offshore_wind_coordinates(IR_file):
+def correct_offshore_wind_coordinates(IR_plants):
 # Use the actual coordiantes to relect potential additions from IR queue of offfshore wind farm
 
     offshore = dict()
@@ -920,16 +920,22 @@ def correct_offshore_wind_coordinates(IR_file):
     offshore['1010'] = []
     offshore['0679'] = []
 
+    IR_plants_wind = IR_plants[IR_plants['type__fuel'] == 'W'] # Filter dataframe to only account for wind energy generators (offshore and onshore)
 
-    pass
+    #for i in IR_plants_wind['Plant Code'].values:
+        #if i in 
+
+    return IR_plants
 
 def combine_eia_IR(conventional_generators, IR_conventional_generators, scenarios):
 # Concatenate conventional generators from EIA 860 2019 and NYISO Interconnection requests based on scenario:
 
 """
 ``` Steam Coal was removed in the get_conventional_generators_impl function - that is coal has zero capacity for 2030 scenario
+conventional_generators: pandas dataframe of 
 """
-    pass
+
+    return conventional_generators
 
 def find_nearest_impl(actual_coordinates, discrete_coordinates):
 # Find index of nearest coordinate for vector of coordinates   
