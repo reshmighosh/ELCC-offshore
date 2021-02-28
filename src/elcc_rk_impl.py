@@ -886,13 +886,13 @@ def IR_analysis(processed_IR_file):
 
     # Filter the dataframe with only important columns and state of NY (some entries have PA)
 
-    IR_plants = IR_queue_final[['project_name', 'date_of_ir', 'sp_(mw)', 'wp_(mw)', 'type__fuel', 'county', 'state', 'proposed__in-service', 'county_coordinates', 'Latitude', 'Longitude']]
+    IR_plants = IR_queue_final[['queue_pos.', 'project_name', 'date_of_ir', 'sp_(mw)', 'wp_(mw)', 'type__fuel', 'county', 'state', 'proposed__in-service', 'county_coordinates', 'Latitude', 'Longitude']]
 
     IR_plants = IR_plants[IR_plants.state == 'NY']
 
     # Change the proposed in service column to datetime format and address missing, random values
 
-    IR_plants.iloc[:, 7]  = IR_plants.iloc[:, 7].str.replace('/', '-')
+    IR_plants.iloc[:, 8]  = IR_plants.iloc[:, 8].str.replace('/', '-')
     IR_plants['proposed__in-service'] = IR_plants['proposed__in-service'].replace('I-S', 'nan')
     IR_plants['proposed__in-service'] = pd.to_datetime(IR_plants['proposed__in-service'])
     IR_plants['proposed_IS_year'] = IR_plants['proposed__in-service'].dt.year
@@ -930,12 +930,20 @@ def correct_offshore_wind_coordinates(IR_plants):
 def combine_eia_IR(conventional_generators, IR_conventional_generators, scenarios):
 # Concatenate conventional generators from EIA 860 2019 and NYISO Interconnection requests based on scenario:
 
-"""
-``` Steam Coal was removed in the get_conventional_generators_impl function - that is coal has zero capacity for 2030 scenario
-conventional_generators: pandas dataframe of 
-"""
+    """
+    `Steam Coal was removed in the get_conventional_generators_impl function - that is coal has zero capacity for 2030 scenario
+    `conventional_generators: pandas dataframe of conventional generators from eia 860 - Isaac's implementation
+    `IR_conventional_generators: dataframe of conventional generators to be added for a specific scenario
 
-    return conventional_generators
+
+    """
+    final 
+
+
+    
+
+
+    return final_conventional_generators
 
 def find_nearest_impl(actual_coordinates, discrete_coordinates):
 # Find index of nearest coordinate for vector of coordinates   
