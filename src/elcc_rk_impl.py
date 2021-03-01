@@ -609,35 +609,70 @@ def get_temperature_dependent_efor(latitudes,longitudes,technology,temperature_d
 
     return get_tech_efor_round_downs(simplified_tech_list,latitudes,longitudes,temperature_data,benchmark_fors)
 
+def get_conventional_fleet_basescenario(conventional_generators):
+# Retire generators from Natural Gas (all CC, CT, ST, DS) - the IR conventional generators hasn't been added yet
+    NGST_to_remove = len(conventional_generators[conventional_generators["technology"] == 'Natural Gas Steam Turbine']) - 28
+    NGDS_to_remove = len(conventional_generators[conventional_generators["technology"] == 'Natural Gas Internal Comsbustion Engine']) - 28
+    NGCT_to_remove = len(conventional_generators[conventional_generators["technology"] == 'Natural Gas Steam Turbine']) - 28
+    NGCC_to_remove = len(conventional_generators[conventional_generators["technology"] == 'Natural Gas Steam Turbine']) - 28
+    NGST = conventional_generators[conventional_generators["technology"] == 'Natural Gas Steam Turbine'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGST_to_remove)
+
+    return final_conventional_generators
+
+
 def get_conventional_fleet_impl(plants,active_generators,system_preferences,temperature_data, year,powGen_lats,powGen_lons,benchmark_fors):
 # Filter generators for operation status, technology, year of simulation
 
     # filtering
+    # removing all NJ generators 
+    active_generators = active_generators[(active_generators["State"] == "NY")]
     active_generators = active_generators[(active_generators["Operating Year"] <= year)]
     active_generators = active_generators[(active_generators["Status"] == "OP")]
     active_generators = active_generators[(~active_generators["Technology"].isin(["Solar Photovoltaic", "Onshore Wind Turbine", "Offshore Wind Turbine", "Batteries"]))]
+
+    # filtering to remove conventional steam coal generators 2030 scenario - all coal has been retired
+    active_generators = active_generators[(~active_generators["Technology"].isin(['Conventional Steam Coal']))]
     
     # Fill empty summer/winter capacities
     active_generators["Summer Capacity (MW)"].where(active_generators["Summer Capacity (MW)"].astype(str) != " ",
                                                     active_generators["Nameplate Capacity (MW)"], inplace=True)
     active_generators["Winter Capacity (MW)"].where(active_generators["Winter Capacity (MW)"].astype(str) != " ", 
                                                     active_generators["Nameplate Capacity (MW)"], inplace=True)
+
+    # Creating the base scenario
+
+
+    NGST_to_remove = len(active_generators[active_generators["technology"] == 'Natural Gas Steam Turbine']) - 28
+    NGDS_to_remove = len(active_generators[active_generators["technology"] == 'Natural Gas Internal Comsbustion Engine']) - 11
+    NGCT_to_remove = len(active_generators[active_generators["technology"] == 'Natural Gas Fired Combustion Turbine']) - 500
+    NGCC_to_remove = len(active_generators[active_generators["technology"] == 'Natural Gas Fired Combined Cycle']) - 50
+    Nuclear_to_remove = len(active_generators[active_generators["technology"] == 'Nuclear']) - 3
+
+    NGST = active_generators[active_generators["technology"] == 'Natural Gas Steam Turbine'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGST_to_remove)
+    NGDS = active_generators[active_generators["technology"] == 'Natural Gas Internal Comsbustion Engine'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGDS_to_remove)
+    NGCT = active_generators[active_generators["technology"] == 'Natural Gas Fired Combustion Turbin'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGCT_to_remove)
+    NGCC = active_generators[active_generators["technology"] == 'Natural Gas Fired Combined Cycle'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGCC_to_remove)
+    Nuclear = active_generators[active_generators["technology"] == 'Nuclear'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(Nuclear_to_remove)
+
+    temp_generators = active_generators[(active_generators["Technology"].isin(["Conventional Hydroelectric", "Flywheels", "Hydroelectric Pumped Storage", "Landfill Gas",\
+                                                                        "Municipal Solid Waste", "Other Natural Gas", "Other Waste Biomass", "Petroleum Liquids", "Wood/Wood Waste Biomass" ]))]
+    final_active_generators = pd.concat([temp_generators, NGST, NGDS, NGCT, NGCC, Nuclear])
     
     #getting lats and longs correct indices
     plants.set_index("Plant Code",inplace=True)
-    latitudes = find_nearest_impl(plants["Latitude"][active_generators["Plant Code"]].values,powGen_lats)
-    longitudes = find_nearest_impl(plants["Longitude"][active_generators["Plant Code"]].values,powGen_lons)
+    latitudes = find_nearest_impl(plants["Latitude"][final_active_generators["Plant Code"]].values,powGen_lats)
+    longitudes = find_nearest_impl(plants["Longitude"][final_active_generators["Plant Code"]].values,powGen_lons)
 
     # Convert Dataframe to Dictionary of numpy arrays
     conventional_generators = dict()
-    conventional_generators["num units"] = active_generators["Nameplate Capacity (MW)"].values.size
-    conventional_generators["nameplate"] = active_generators["Nameplate Capacity (MW)"].values
-    conventional_generators["summer nameplate"] = active_generators["Summer Capacity (MW)"].values
-    conventional_generators["winter nameplate"] = active_generators["Winter Capacity (MW)"].values
-    conventional_generators["year"] = active_generators["Operating Year"].values
-    conventional_generators["technology"] = active_generators["Technology"].values
+    conventional_generators["num units"] = final_active_generators["Nameplate Capacity (MW)"].values.size
+    conventional_generators["nameplate"] = final_active_generators["Nameplate Capacity (MW)"].values
+    conventional_generators["summer nameplate"] = final_active_generators["Summer Capacity (MW)"].values
+    conventional_generators["winter nameplate"] = final_active_generators["Winter Capacity (MW)"].values
+    conventional_generators["year"] = final_active_generators["Operating Year"].values
+    conventional_generators["technology"] = final_active_generators["Technology"].values
     if(system_preferences["temperature dependent FOR"]):
-        conventional_generators["efor"] = get_temperature_dependent_efor(latitudes,longitudes, active_generators["Technology"].values,temperature_data,benchmark_fors)
+        conventional_generators["efor"] = get_temperature_dependent_efor(latitudes,longitudes, final_active_generators["Technology"].values,temperature_data,benchmark_fors)
         if not (system_preferences["temperature dependent FOR indpendent of size"]):
             print("Removed temperature dependency FORs for generators smaller then 20 MW")
             conventional_generators["efor"] = np.where(np.array([conventional_generators["nameplate"],]*8760).T <= 20,system_preferences["conventional efor"],conventional_generators["efor"])
@@ -650,6 +685,7 @@ def get_conventional_fleet_impl(plants,active_generators,system_preferences,temp
         raise RuntimeError(error_message)
     
     return conventional_generators
+
 
 def get_conventional_fleet(eia_folder, regions, year, system_preferences,powGen_lats,powGen_lons,temperature_data,benchmark_fors):
     """ Retrieve all active conventional generators
