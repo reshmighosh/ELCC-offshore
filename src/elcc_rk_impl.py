@@ -609,15 +609,26 @@ def get_temperature_dependent_efor(latitudes,longitudes,technology,temperature_d
 
     return get_tech_efor_round_downs(simplified_tech_list,latitudes,longitudes,temperature_data,benchmark_fors)
 
-def get_conventional_fleet_basescenario(conventional_generators):
+def get_conventional_fleet_basescenario(active_generators):
 # Retire generators from Natural Gas (all CC, CT, ST, DS) - the IR conventional generators hasn't been added yet
     NGST_to_remove = len(conventional_generators[conventional_generators["technology"] == 'Natural Gas Steam Turbine']) - 28
     NGDS_to_remove = len(conventional_generators[conventional_generators["technology"] == 'Natural Gas Internal Comsbustion Engine']) - 28
     NGCT_to_remove = len(conventional_generators[conventional_generators["technology"] == 'Natural Gas Steam Turbine']) - 28
     NGCC_to_remove = len(conventional_generators[conventional_generators["technology"] == 'Natural Gas Steam Turbine']) - 28
-    NGST = conventional_generators[conventional_generators["technology"] == 'Natural Gas Steam Turbine'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGST_to_remove)
+    Nuclear_to_remove = len(active_generators[active_generators["technology"] == 'Nuclear']) - 3
 
-    return final_conventional_generators
+    NGST = active_generators[active_generators["technology"] == 'Natural Gas Steam Turbine'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGST_to_remove)
+    NGDS = actuve_generators[active_generators["technology"] == 'Natural Gas Internal Comsbustion Engine'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGDS_to_remove)
+    NGCT = active_generators[active_generators["technology"] == 'Natural Gas Fired Combustion Turbin'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGCT_to_remove)
+    NGCC = active_generators[active_generators["technology"] == 'Natural Gas Fired Combined Cycle'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(NGCC_to_remove)
+    Nuclear = active_generators[active_generators["technology"] == 'Nuclear'].sort_values(['Operating Year', 'Nameplate Capacity (MW)'], ascending = (True, True)).tail(Nuclear_to_remove)
+
+    temp_generators = active_generators[(active_generators["Technology"].isin(["Conventional Hydroelectric", "Flywheels", "Hydroelectric Pumped Storage", "Landfill Gas",\
+                                                                        "Municipal Solid Waste", "Other Natural Gas", "Other Waste Biomass", "Petroleum Liquids", "Wood/Wood Waste Biomass" ]))]
+    final_active_generators = pd.concat([temp_generators, NGST, NGDS, NGCT, NGCC, Nuclear])
+
+    #return final_active_generators
+    pass
 
 
 def get_conventional_fleet_impl(plants,active_generators,system_preferences,temperature_data, year,powGen_lats,powGen_lons,benchmark_fors):
@@ -641,6 +652,8 @@ def get_conventional_fleet_impl(plants,active_generators,system_preferences,temp
 
     # Creating the base scenario
 
+    print('creating base scenario')
+
 
     NGST_to_remove = len(active_generators[active_generators["technology"] == 'Natural Gas Steam Turbine']) - 28
     NGDS_to_remove = len(active_generators[active_generators["technology"] == 'Natural Gas Internal Comsbustion Engine']) - 11
@@ -657,6 +670,7 @@ def get_conventional_fleet_impl(plants,active_generators,system_preferences,temp
     temp_generators = active_generators[(active_generators["Technology"].isin(["Conventional Hydroelectric", "Flywheels", "Hydroelectric Pumped Storage", "Landfill Gas",\
                                                                         "Municipal Solid Waste", "Other Natural Gas", "Other Waste Biomass", "Petroleum Liquids", "Wood/Wood Waste Biomass" ]))]
     final_active_generators = pd.concat([temp_generators, NGST, NGDS, NGCT, NGCC, Nuclear])
+    print('base scenario generated')
     
     #getting lats and longs correct indices
     plants.set_index("Plant Code",inplace=True)
@@ -756,10 +770,19 @@ def get_RE_fleet_impl(eia_folder, regions, year, plants, RE_generators, desired_
                                                     active_generators["Nameplate Capacity (MW)"], inplace=True)
     active_generators["Winter Capacity (MW)"].where(active_generators["Winter Capacity (MW)"].astype(str) != " ", 
                                                     active_generators["Nameplate Capacity (MW)"], inplace=True)
-
+                                                    \
+    # Adding generators for offshore, onshore, and solar from Interconnection Queue
+    """
+    IR_plants = pd.read_csv('IR_plants'.csv)
+    IR_plants_2030 =  IR_plants[IR_plants.proposed_IS_year <= 2029]
+    IR_plants2030_solar = IR_plants_2030[IR_plants_2030['type__fuel'] == 'S'].sort_values(['proposed_IS_year', 'sp_(mw)'], ascending = (True, True))
+    IR_solar_generators = IR_plants2030_solar[IR_plants2030_solar['sp_(mw)'].cumsum() <= 6000][["queue_pos.", "project_name", "sp_(mw)", "wp_(mw)", "Latitude", "Longitude"]]
+    """
+                                        
     # Get coordinates
     latitudes = plants["Latitude"][active_generators["Plant Code"]].values
-    longitudes = plants["Longitude"][active_generators["Plant Code"]].values
+    longitudes = plants["Longitude"][active_generators["Plant Code"]].values 
+    
 
     # Convert Dataframe to Dictionary of numpy arrays
     RE_generators = dict()
@@ -956,12 +979,13 @@ def correct_offshore_wind_coordinates(IR_plants):
     offshore['1010'] = []
     offshore['0679'] = []
 
-    IR_plants_wind = IR_plants[IR_plants['type__fuel'] == 'W'] # Filter dataframe to only account for wind energy generators (offshore and onshore)
+    #IR_plants_wind = IR_plants[IR_plants['type__fuel'] == 'W'] # Filter dataframe to only account for wind energy generators (offshore and onshore)
 
     #for i in IR_plants_wind['Plant Code'].values:
         #if i in 
 
-    return IR_plants
+    #return IR_plants
+    pass
 
 def combine_eia_IR(conventional_generators, IR_conventional_generators, scenarios):
 # Concatenate conventional generators from EIA 860 2019 and NYISO Interconnection requests based on scenario:
@@ -973,13 +997,10 @@ def combine_eia_IR(conventional_generators, IR_conventional_generators, scenario
 
 
     """
-    final 
+    #final 
 
-
-    
-
-
-    return final_conventional_generators
+    #return final_conventional_generators
+    pass
 
 def find_nearest_impl(actual_coordinates, discrete_coordinates):
 # Find index of nearest coordinate for vector of coordinates   
