@@ -772,12 +772,31 @@ def get_RE_fleet_impl(eia_folder, regions, year, plants, RE_generators, desired_
                                                     active_generators["Nameplate Capacity (MW)"], inplace=True)
                                                     \
     # Adding generators for offshore, onshore, and solar from Interconnection Queue
-    """
+    
     IR_plants = pd.read_csv('IR_plants'.csv)
     IR_plants_2030 =  IR_plants[IR_plants.proposed_IS_year <= 2029]
     IR_plants2030_solar = IR_plants_2030[IR_plants_2030['type__fuel'] == 'S'].sort_values(['proposed_IS_year', 'sp_(mw)'], ascending = (True, True))
-    IR_solar_generators = IR_plants2030_solar[IR_plants2030_solar['sp_(mw)'].cumsum() <= 6000][["queue_pos.", "project_name", "sp_(mw)", "wp_(mw)", "Latitude", "Longitude"]]
-    """
+
+    # For solar base scenario 
+    IR_solar_generators_base = IR_plants2030_solar[IR_plants2030_solar['sp_(mw)'].cumsum() <= 6000][["queue_pos.", "project_name", "sp_(mw)", "wp_(mw)", "Latitude", "Longitude"]]
+    # For solar high scenario - scenario 3 
+    IR_solar_generators_high = IR_plants2030_solar[IR_plants2030_solar['sp_(mw)'].cumsum() <= 6000][["queue_pos.", "project_name", "sp_(mw)", "wp_(mw)", "Latitude", "Longitude"]]
+
+    # For offshore base scenario 
+    
+    IR_offshore_generators_high = IR_plants_2030[IR_plants_2030['queue_pos.'].isin(['0612', '0695', '0737', '0738', '0958', '0959', '0788', '0363', '1010', '1011', '0679', '0680', '0767', '0789', '0790', '0957', '0765', '0766'])]
+    IR_offshore_generators_base = IR_offshore_generators_high[IR_offshore_generators_high['queue_pos.'].isin(['0363', '0612', '0695', '0765', '0766', '0957', '0767', '0737', '0738'])]
+
+    # For onshore base scenario
+    offshore_wind_filter = IR_plants_2030[~(IR_plants_2030['queue_pos.'].isin(['0612', '0695', '0737', '0738', '0958', '0959', '0788', '0363', '1010', '1011', '0679', '0680', '0767', '0789', '0790', '0957', '0765', '0766']))]
+    onshore_wind_farms = offshore_wind_filter[offshore_wind_filter['type__fuel'] == 'W']
+    onshore_wind_farms = onshore_wind_farms.sort_values(['proposed_IS_year', 'sp_(mw')], ascending = (True, True))
+    IR_onshore_generators_base = onshore_wind_farms[onshore_wind_farms['sp_(mw)'].cumsum() <= (3380 -1991.2)]
+
+
+    # For high onshore base scenario
+    IR_onshore_generators_high = onshore_wind_farms
+
                                         
     # Get coordinates
     latitudes = plants["Latitude"][active_generators["Plant Code"]].values
