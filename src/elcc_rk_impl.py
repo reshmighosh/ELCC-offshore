@@ -797,10 +797,32 @@ def get_RE_fleet_impl(eia_folder, regions, year, plants, RE_generators, desired_
     # For high onshore base scenario
     IR_onshore_generators_high = onshore_wind_farms
 
+
+    # Base RE generators
+    base = pd.concat([IR_solar_generators_base, IR_offshore_generators_base, IR_onshore_generators_base])
+    print('\n base case created')
+
+    # Scenario 1: high offshore + base generators
+    high_offshore = pd.concat([IR_solar_generators_base, IR_offshore_generators_high, IR_onshore_generators_base])
+    print('\n high offshore created')
+
+    # Scenario 2: high onshore + base generatffleetors
+    high_onshore = pd.concat([IR_solar_generators_base, IR_offshore_generators_base, IR_onshore_generators_high])
+    print('\n high onshore created')
+
+    # Scenario 3: high solar + base generators
+    high_solar = pd.concat([IR_solar_generators_high, IR_offshore_generators_base, IR_onshore_generators_base])
+    # remove print statement later 
+    print('\n high solar created')
+
+
                                         
     # Get coordinates
     latitudes = plants["Latitude"][active_generators["Plant Code"]].values
     longitudes = plants["Longitude"][active_generators["Plant Code"]].values 
+
+    # Coordinates of the IR file
+    
     
 
     # Convert Dataframe to Dictionary of numpy arrays
@@ -812,6 +834,16 @@ def get_RE_fleet_impl(eia_folder, regions, year, plants, RE_generators, desired_
     RE_generators["lat"] = latitudes
     RE_generators["lon"] = longitudes
     RE_generators["efor"] = np.ones(RE_generators["nameplate"].size) * RE_efor 
+
+    # Adding the IR coordinates to the dictionary - change according to scenario; currently for base scenario
+    RE_generators['num units'] = RE_generators['num units'] + base['sp_(mw)'].values.size
+    np.append(RE_generators["nameplate"], base["Nameplate Capacity (MW)"].values * renewable_multiplier)
+    np.append(RE_generators["summer nameplate"], base["sp_(mw)"].values * renewable_multiplier)
+    np.append(RE_generators["summer nameplate"], base["sp_(mw)"].values * renewable_multiplier)
+    np.append(RE_generators["lat"], base["Latitude"].values)
+    np.append(RE_generators["lon"], base["Longitude"].values)
+    np.append(RE_generators["efor"], np.ones(base["Nameplate Capacity (MW)"].size) * RE_efor 
+
 
     return RE_generators
 
