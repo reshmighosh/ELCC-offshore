@@ -1,11 +1,21 @@
 import os
 import sys
 import numpy as np
-from elcc_rk_impl import get_powGen # change to elcc_impl on greatlakes
+
+root_directory = sys.argv[1]
 
 LAUNCH_FILE = 'elcc_job_0.txt'
 
 def init():
+
+    global root_directory 
+
+    # In case I forgot a '/'
+    if root_directory[-1] != '/':
+        root_directory += '/'
+
+    if not os.path.exists(root_directory):
+        raise RuntimeError('Invalid root directory\n' + root_directory)
 
     # Save time and money 
     print("Job Checklist: Have you...")
@@ -23,6 +33,7 @@ def user_check(message, test_response):
         sys.exit(1)
 
 def new_job():
+
     global LAUNCH_FILE
 
     i = 0
@@ -52,30 +63,11 @@ def run_job():
 
     global LAUNCH_FILE
 
-    # only launch non-empty jobs
-    if os.path.exists(LAUNCH_FILE):
-        # launch job
-        os.system('sbatch elcc_batch_job.sbat '+LAUNCH_FILE)
+    # launch job
+    os.system('sbatch elcc_single_job.sbat '+LAUNCH_FILE)
 
-        # start new file for running
-        new_job()
-
-def run_map(lats,lons,parameters):
-
-    i = 0 # keep track of job num
-    for lat in lats[:]: # half resolution
-        parameters['latitude'] = lat
-
-        for lon in lons[:]: # half resolution
-            parameters['longitude'] = lon
-            add_job(parameters)
-            
-            i += 1
-            # eighteen jobs/node?
-            if i % 18 == 0: run_job()
-    
-    # run last set if necessary
-    run_job()
+    # start new file for running
+    new_job()
 
 def fix_region_string(parameters):
 #list to formatted string
@@ -97,37 +89,26 @@ def fix_region_string(parameters):
     return parameters
     
 
-def main(region,year,tech,tdf):
+def main():
 
     global root_directory
 
     parameters = dict()
-    
+    parameters['root directory'] = root_directory
 
     ########### DO NOT WRITE ABOVE THIS LINE (please?) #############
 
     # universal parameters
-    if tdf == 'False':
-        add_on = '_fixed_for'
-    else:
-        add_on = ''
-    parameters['root directory'] = '/home/ijbd/output/'+region+'/'+str(year)+'/500_MW_'+tech+add_on+'/'
-    parameters['year'] = year
-    parameters['region'] = region.capitalize()
-    parameters['iterations'] = 5000
-    parameters['nameplate']=50
-    parameters['generator type']=tech
-    parameters['temperature dependent FOR'] = tdf
+    parameters['iterations'] = 10
+    parameters['year'] = 2019
+    region = sys.argv[2]
+    parameters['region'] = region
+    add_job(parameters)
+    run_job()
 
-    # variable parameters
-    solar_cf_file = "/scratch/mtcraig_root/mtcraig1/shared_data/merraData/cfs/wecc/2018_solar_generation_cf.nc" # only used for getting lat/lons
-    wind_cf_file = "/scratch/mtcraig_root/mtcraig1/shared_data/merraData/cfs/wecc/2018_wind_generation_cf.nc" 
-
-    lats, lons, cf = get_powGen(solar_cf_file, wind_cf_file)
     
-    run_map(lats,lons,parameters)
     
 
 if __name__ == "__main__":
     init()
-    main(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4])
+    main()

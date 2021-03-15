@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#SBATCH --job-name=elcc_calc
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=18
+#SBATCH --cpus-per-task=1
+#SBATCH --partition=standard
+#SBATCH --mem-per-cpu=8GB
+#SBATCH --time=1:00:00
+#SBATCH --account=mtcraig1
+
+module load launcher/3.7 
+my_job_header
+
+launch_file=$1
+
+export LAUNCHER_JOB_FILE=$launch_file
+
+paramrun
+
+rm $launch_file
